@@ -50,6 +50,20 @@ input{font:inherit;font-size:14px;width:100px;background:#0b0820;border:3px soli
 nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:flex;background:var(--bg);border-top:4px solid var(--pink);padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;font:inherit;font-size:9px;background:none;border:0;color:var(--dim);padding:16px 0}
 nav button.on{color:var(--yellow)}
+.hab{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:2px dashed var(--line);font-size:9px}
+.hab>span{font-size:20px}.hab .t{flex:1}.hab.done .t{color:var(--green)}
+.hab button{font:inherit;font-size:14px;width:44px;height:44px;border:3px solid var(--text);background:var(--pink);color:#fff;padding:0}
+.hab button.m{background:#0b0820;color:var(--dim);border-color:var(--line)}
+.fig svg{display:block;margin:0 auto 12px;height:340px;width:auto;max-width:100%;shape-rendering:crispEdges}
+.part rect{fill:#3b2f7a;stroke:#14102b;stroke-width:.4;cursor:pointer}
+.part.has rect{fill:#2bb8c4}.part.sel rect{fill:var(--yellow)}.deco{pointer-events:none}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip{font:inherit;font-size:8px;text-align:left;color:var(--text);background:#0b0820;border:3px solid var(--line);padding:8px;min-height:52px}
+.chip.sel{border-color:var(--yellow)}.chip b{display:block;font-size:11px;color:var(--cyan);margin-top:2px}
+.spark{display:flex;align-items:flex-end;gap:3px;height:70px;margin:12px 0}.spark i{flex:1;background:var(--green);min-width:4px}
+.x{font:inherit;font-size:8px;background:none;border:0;color:var(--pink);padding:6px}
+input[type=date]{width:auto;font-size:10px;padding:6px;border-color:var(--line)}
+.log{flex-wrap:wrap}
 .tab{display:none}.tab.on{display:block}
 #pop{position:fixed;inset:0;background:rgba(10,6,30,.88);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
 #pop.on{display:flex}
@@ -72,6 +86,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
    <div id="dq" class="small"></div>
    <div class="bar" id="dbar" style="margin-bottom:0"></div>
   </div>
+  <div class="card"><h2>Daily habits</h2><div id="hab"></div></div>
   <div class="card"><h2>Pick a move</h2>
    <div class="ex" id="ex"></div>
    <div class="log"><input id="amt" type="number" inputmode="numeric" min="1" placeholder="0"><button class="btn" id="go">Log it</button></div>
@@ -80,6 +95,11 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
  </section>
  <section class="tab" id="t-badges">
   <div class="card"><h2>Badges <span class="small" id="bcount"></span></h2><div class="badges" id="badges"></div></div>
+ </section>
+ <section class="tab" id="t-me">
+  <div class="card"><h2>Body map</h2><div class="small" style="margin-bottom:8px">Tap a body part. Left arm is biceps, right arm is triceps.</div>
+   <div class="fig"><svg id="fig" viewBox="0 0 32 57"></svg></div><div class="chips" id="chips"></div></div>
+  <div class="card" id="detail"></div>
  </section>
  <section class="tab" id="t-stats">
   <div class="card"><h2>Player stats</h2><div class="stats" id="stats"></div></div>
@@ -90,7 +110,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
  </section>
 </main>
 <nav>
- <button class="on" data-t="quest">QUEST</button><button data-t="badges">BADGES</button><button data-t="stats">STATS</button>
+ <button class="on" data-t="quest">QUEST</button><button data-t="badges">BADGES</button><button data-t="stats">STATS</button><button data-t="me">PROFILE</button>
 </nav>
 <div id="pop"><div class="card"><div id="popic" style="font-size:44px"></div><h3 id="popt"></h3><div class="small" id="popd"></div><br><button class="btn" id="popok">Continue</button></div></div>
 <script>
@@ -100,9 +120,26 @@ const EX=[
  {id:'sit',n:'Sit-ups',u:'reps',x:1.5,i:'🔥'},
  {id:'run',n:'Run',u:'min',x:12,i:'👟'},
  {id:'walk',n:'Walk',u:'min',x:5,i:'🚶'},
- {id:'lift',n:'Lift',u:'min',x:10,i:'🏋️'},
- {id:'bike',n:'Cycle',u:'min',x:9,i:'🚴'},
- {id:'yoga',n:'Yoga',u:'min',x:6,i:'🧘'}];
+ {id:'bike',n:'Cycle',u:'min',x:9,i:'🚴'}];
+const HAB=[
+ {id:'nail',n:'No nail biting',i:'🖐️',t:1,x:25},
+ {id:'bible',n:'Bible study',i:'📖',t:2,x:15},
+ {id:'water',n:'Drink water',i:'💧',t:8,x:5,ml:250},
+ {id:'teeth',n:'Brush teeth at night',i:'🪥',t:1,x:15},
+ {id:'gym',n:'Go to gym',i:'🏋️',t:1,x:40}];
+const PARTS=[
+ {id:'height',n:'Height',u:'cm'},{id:'weight',n:'Weight',u:'kg'},
+ {id:'head',n:'Head',u:'cm',r:[[12,1,8,8]]},
+ {id:'neck',n:'Neck',u:'cm',r:[[13,9,6,3]]},
+ {id:'shoulders',n:'Shoulders',u:'cm',h:'Around the widest point',r:[[4,12,24,3]]},
+ {id:'chest',n:'Chest',u:'cm',h:'Around the nipple line',r:[[8,15,16,7]]},
+ {id:'biceps',n:'Biceps',u:'cm',h:'Flexed, mid upper arm',r:[[4,15,4,8]]},
+ {id:'triceps',n:'Triceps',u:'cm',h:'Back of upper arm',r:[[24,15,4,8]]},
+ {id:'forearm',n:'Forearm',u:'cm',h:'Widest point',r:[[4,23,4,8],[24,23,4,8]]},
+ {id:'waist',n:'Waist',u:'cm',h:'Around the navel',r:[[8,22,16,6]]},
+ {id:'hips',n:'Hips',u:'cm',h:'Widest point',r:[[8,28,16,4]]},
+ {id:'thigh',n:'Thigh',u:'cm',h:'Mid thigh',r:[[8,32,7,12],[17,32,7,12]]},
+ {id:'calves',n:'Calves',u:'cm',h:'Widest point',r:[[9,44,5,10],[18,44,5,10]]}];
 const DAILY=100;
 const needFor=l=>100+(l-1)*50;           // XP to go from level l to l+1
 function lvlOf(xp){let l=1;while(xp>=needFor(l)){xp-=needFor(l);l++}return{l,cur:xp,need:needFor(l)}}
@@ -110,13 +147,16 @@ const day=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,
 const KEY='levelup.v1';
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-S=S||{xp:0,logs:[],badges:{},bonus:{}};
+S=Object.assign({xp:0,logs:[],badges:{},bonus:{},meas:{}},S||{});
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const dayXP=d=>S.logs.filter(l=>l.d===d).reduce((a,l)=>a+l.xp,0);
 function streak(){let s=0,d=new Date();if(!dayXP(day(d)))d.setDate(d.getDate()-1);
  while(dayXP(day(d))>0){s++;d.setDate(d.getDate()-1)}return s}
 function best(){const ds=[...new Set(S.logs.map(l=>l.d))].sort();let b=0,c=0,p=null;
  for(const d of ds){const t=new Date(d+'T00:00');if(p&&(t-p)/864e5===1)c++;else c=1;b=Math.max(b,c);p=t}return b}
+const hc=(id,d=day())=>S.logs.filter(l=>l.d===d&&l.e===id).length;
+const r1=n=>Math.round(n*10)/10;
+const item=id=>EX.find(e=>e.id===id)||HAB.find(h=>h.id===id)||{i:'•',u:'',n:id};
 const tot=id=>S.logs.filter(l=>l.e===id).reduce((a,l)=>a+l.n,0);
 const BADGES=[
  {id:'first',n:'First rep',i:'🎮',t:()=>S.logs.length>=1},
@@ -135,7 +175,15 @@ const BADGES=[
  {id:'q7',n:'7 quests',i:'🏆',t:()=>Object.keys(S.bonus).length>=7},
  {id:'all',n:'Try all moves',i:'🧩',t:()=>EX.every(e=>tot(e.id)>0)},
  {id:'big',n:'500 XP day',i:'💥',t:()=>S.logs.some(l=>dayXP(l.d)>=500)},
- {id:'k1',n:'1000 XP',i:'💎',t:()=>S.xp>=1000}];
+ {id:'k1',n:'1000 XP',i:'💎',t:()=>S.xp>=1000},
+ {id:'wat',n:'8 glasses',i:'💧',t:()=>S.logs.some(l=>hc('water',l.d)>=8)},
+ {id:'bib',n:'Word twice',i:'📖',t:()=>S.logs.some(l=>hc('bible',l.d)>=2)},
+ {id:'n7',n:'7 clean days',i:'✋',t:()=>tot('nail')>=7},
+ {id:'t7',n:'7 bright nights',i:'😁',t:()=>tot('teeth')>=7},
+ {id:'g10',n:'10 gym days',i:'🏋️',t:()=>tot('gym')>=10},
+ {id:'perf',n:'Perfect day',i:'🌈',t:()=>S.logs.some(l=>HAB.every(h=>hc(h.id,l.d)>=h.t))},
+ {id:'m1',n:'First scan',i:'📏',t:()=>Object.keys(S.meas).length>=1},
+ {id:'mall',n:'Full scan',i:'🧍',t:()=>PARTS.every(p=>(S.meas[p.id]||[]).length>0)}];
 const $=id=>document.getElementById(id);
 const seg=(el,f,n=12)=>{el.innerHTML='';for(let i=0;i<n;i++){const s=document.createElement('i');if(i<Math.round(f*n))s.className='on';el.appendChild(s)}};
 let sel=EX[0],queue=[];
@@ -143,6 +191,45 @@ function pop(i,t,d){queue.push([i,t,d]);if(!$('pop').classList.contains('on'))ne
 function next(){const q=queue.shift();if(!q){$('pop').classList.remove('on');return}
  $('popic').textContent=q[0];$('popt').textContent=q[1];$('popd').textContent=q[2];$('pop').classList.add('on')}
 $('popok').onclick=next;
+function afterXP(before,d){
+ if(dayXP(d)>=DAILY&&!S.bonus[d]){S.bonus[d]=1;S.xp+=50;pop('🎯','Quest clear!','+50 bonus XP')}
+ const a=lvlOf(S.xp).l;if(a>before)pop('⬆️','Level '+a,'You levelled up!');
+ checkBadges(d);save();render();
+}
+function checkBadges(d){BADGES.forEach(b=>{if(!S.badges[b.id]&&b.t()){S.badges[b.id]=d;pop(b.i,'Badge unlocked',b.n)}})}
+function habit(id,up){
+ const h=HAB.find(x=>x.id===id),d=day(),c=hc(id,d),before=lvlOf(S.xp).l;
+ if(up){if(c>=h.t)return;S.logs.push({d,e:id,n:1,xp:h.x});S.xp+=h.x;if(navigator.vibrate)navigator.vibrate(30);afterXP(before,d)}
+ else{let i=S.logs.length-1;while(i>=0&&!(S.logs[i].d===d&&S.logs[i].e===id))i--;if(i<0)return;
+  S.xp=Math.max(0,S.xp-S.logs[i].xp);S.logs.splice(i,1);
+  if(S.bonus[d]&&dayXP(d)<DAILY){delete S.bonus[d];S.xp=Math.max(0,S.xp-50)}
+  save();render()}
+}
+$('hab').onclick=e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.h;
+ if(b.dataset.a==='tog')habit(id,hc(id)<1);else habit(id,b.dataset.a==='up')};
+let selP='chest';
+function renderProfile(){
+ const has=id=>(S.meas[id]||[]).length>0;
+ let g=PARTS.filter(p=>p.r).map(p=>`<g class="part ${has(p.id)?'has':''} ${p.id===selP?'sel':''}" data-p="${p.id}">${p.r.map(r=>`<rect x="${r[0]}" y="${r[1]}" width="${r[2]}" height="${r[3]}"/>`).join('')}</g>`).join('');
+ g+='<g class="deco"><rect x="14" y="4" width="1" height="1" fill="#14102b"/><rect x="17" y="4" width="1" height="1" fill="#14102b"/><rect x="15" y="6.5" width="2" height=".8" fill="#14102b"/><rect x="4" y="31" width="4" height="2" fill="#ffb98a"/><rect x="24" y="31" width="4" height="2" fill="#ffb98a"/><rect x="8" y="54" width="6" height="3" fill="#ff3d9a"/><rect x="18" y="54" width="6" height="3" fill="#ff3d9a"/></g>';
+ $('fig').innerHTML=g;
+ $('chips').innerHTML=PARTS.map(p=>{const a=S.meas[p.id]||[],l=a[a.length-1];return`<button class="chip ${p.id===selP?'sel':''}" data-p="${p.id}">${p.n}<b>${l?l.v+' '+p.u:'--'}</b></button>`}).join('');
+ const P=PARTS.find(p=>p.id===selP),a=S.meas[selP]||[];
+ let h=`<h2>${P.n}</h2>`+(P.h?`<div class="small">${P.h}</div>`:'');
+ if(a.length){const dl=r1(a[a.length-1].v-a[0].v);h+=`<p>${a[a.length-1].v} ${P.u}</p><div class="small">Since start: ${dl>0?'+':''}${dl} ${P.u}</div>`}
+ else h+='<p class="small">No entries yet. Add your first measurement.</p>';
+ if(a.length>1){const v=a.slice(-12).map(e=>e.v),mn=Math.min(...v),mx=Math.max(...v);h+='<div class="spark">'+v.map(x=>`<i style="height:${20+(x-mn)/((mx-mn)||1)*80}%"></i>`).join('')+'</div>'}
+ h+=`<div class="log"><input id="mv" type="number" step="0.1" inputmode="decimal" placeholder="${P.u}"><button class="btn" id="msave">Save</button></div><div class="small" style="margin:10px 0">Date <input id="md" type="date" value="${day()}"></div>`;
+ if(a.length)h+='<div class="hist">'+a.slice(-6).reverse().map(e=>`<div><span>${e.d.slice(5)}  ${e.v} ${P.u}</span><button class="x" data-del="${e.d}">DEL</button></div>`).join('')+'</div>';
+ $('detail').innerHTML=h;
+}
+const pick=e=>{const t=e.target.closest('[data-p]');if(t){selP=t.dataset.p;renderProfile()}};
+$('fig').onclick=pick;$('chips').onclick=pick;
+$('detail').onclick=e=>{
+ if(e.target.id==='msave'){const v=parseFloat($('mv').value),d=$('md').value||day();if(!(v>0)){$('mv').focus();return}
+  const a=(S.meas[selP]||[]).filter(x=>x.d!==d);a.push({d,v:r1(v)});a.sort((x,y)=>x.d<y.d?-1:1);S.meas[selP]=a;checkBadges(day());save();render()}
+ else if(e.target.dataset.del){S.meas[selP]=(S.meas[selP]||[]).filter(x=>x.d!==e.target.dataset.del);if(!S.meas[selP].length)delete S.meas[selP];save();render()}
+};
 function render(){
  const L=lvlOf(S.xp);$('lvl').textContent='LV '+L.l;seg($('bar'),L.cur/L.need,16);
  $('xptxt').textContent=Math.floor(L.cur)+' / '+L.need+' XP to next level';
@@ -150,11 +237,15 @@ function render(){
  seg($('dbar'),Math.min(t/DAILY,1),10);
  $('ex').innerHTML=EX.map(e=>`<button data-id="${e.id}" class="${e.id===sel.id?'sel':''}">${e.i} ${e.n}<span>${e.x} XP / ${e.u==='reps'?'rep':'min'}</span></button>`).join('');
  $('ex').querySelectorAll('button').forEach(b=>b.onclick=()=>{sel=EX.find(e=>e.id===b.dataset.id);render()});
+ $('hab').innerHTML=HAB.map(h=>{const c=hc(h.id),done=c>=h.t,p=h.ml?`${c}/${h.t} · ${c*h.ml}ml of ${h.t*h.ml}ml`:`${c}/${h.t}`;
+  const b=h.t===1?`<button data-h="${h.id}" data-a="tog">${done?'✔':'+'}</button>`:`<button class="m" data-h="${h.id}" data-a="dn">-</button><button data-h="${h.id}" data-a="up">+</button>`;
+  return`<div class="hab ${done?'done':''}"><span>${h.i}</span><div class="t">${h.n}<div class="small">${p} · +${h.x} XP${h.t>1?' each':''}</div></div>${b}</div>`}).join('');
+ renderProfile();
  $('amt').placeholder=sel.u;prev();
  $('badges').innerHTML=BADGES.map(b=>`<div class="b ${S.badges[b.id]?'got':''}"><div class="ic">${b.i}</div><p>${b.n}</p></div>`).join('');
  $('bcount').textContent=Object.keys(S.badges).length+'/'+BADGES.length;
  $('stats').innerHTML=[['Total XP',Math.floor(S.xp)],['Streak',streak()],['Best',best()],['Workouts',S.logs.length],['Days',new Set(S.logs.map(l=>l.d)).size],['Quests',Object.keys(S.bonus).length]].map(s=>`<div><b>${s[1]}</b><span class="small">${s[0]}</span></div>`).join('');
- $('hist').innerHTML=S.logs.slice(-10).reverse().map(l=>{const e=EX.find(x=>x.id===l.e);return`<div><span>${l.d.slice(5)} ${e.i} ${l.n} ${e.u}</span><em>+${l.xp}</em></div>`}).join('')||'<div class="small">No workouts yet. Log your first move.</div>';
+ $('hist').innerHTML=S.logs.slice(-10).reverse().map(l=>{const e=item(l.e);return`<div><span>${l.d.slice(5)} ${e.i} ${e.t?e.n:l.n+' '+e.u}</span><em>+${l.xp}</em></div>`}).join('')||'<div class="small">No workouts yet. Log your first move.</div>';
 }
 function prev(){const n=+$('amt').value;$('preview').textContent=n>0?'Reward: +'+Math.round(n*sel.x)+' XP':''}
 $('amt').oninput=prev;
@@ -162,19 +253,16 @@ $('go').onclick=()=>{
  const n=Math.floor(+$('amt').value);if(!(n>0)){$('amt').focus();return}
  const before=lvlOf(S.xp).l,xp=Math.round(n*sel.x),d=day();
  S.logs.push({d,e:sel.id,n,xp});S.xp+=xp;
- if(dayXP(d)>=DAILY&&!S.bonus[d]){S.bonus[d]=1;S.xp+=50;pop('🎯','Quest clear!','+50 bonus XP')}
- const after=lvlOf(S.xp).l;
- if(after>before)pop('⬆️','Level '+after,'You levelled up!');
- BADGES.forEach(b=>{if(!S.badges[b.id]&&b.t()){S.badges[b.id]=d;pop(b.i,'Badge unlocked',b.n)}});
- $('amt').value='';save();render();
+ $('amt').value='';afterXP(before,d);
+
  if(navigator.vibrate)navigator.vibrate(40);
 };
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='t-'+b.dataset.t));scrollTo(0,0)});
 $('exp').onclick=async()=>{const s=JSON.stringify(S);try{await navigator.clipboard.writeText(s);pop('💾','Copied','Paste it somewhere safe')}catch(e){prompt('Copy your backup:',s)}};
-$('imp').onclick=()=>{const s=prompt('Paste your backup:');if(!s)return;try{const o=JSON.parse(s);if(typeof o.xp!=='number'||!Array.isArray(o.logs))throw 0;S=o;save();render()}catch(e){alert('That backup is not valid.')}};
-$('rst').onclick=()=>{if(confirm('Erase all progress?')){S={xp:0,logs:[],badges:{},bonus:{}};save();render()}};
+$('imp').onclick=()=>{const s=prompt('Paste your backup:');if(!s)return;try{const o=JSON.parse(s);if(typeof o.xp!=='number'||!Array.isArray(o.logs))throw 0;S=Object.assign({meas:{},bonus:{},badges:{}},o);save();render()}catch(e){alert('That backup is not valid.')}};
+$('rst').onclick=()=>{if(confirm('Erase all progress and measurements?')){S={xp:0,logs:[],badges:{},bonus:{},meas:{}};save();render()}};
 render();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
