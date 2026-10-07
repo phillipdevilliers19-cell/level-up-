@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14102b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg">
+<title>Level Up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#14102b;--panel:#211a47;--line:#3b2f7a;--pink:#ff3d9a;--cyan:#3df5ff;--yellow:#ffd23d;--green:#5dff7a;--text:#f2eeff;--dim:#8f85c9;
+--f:'Press Start 2P',ui-monospace,Menlo,monospace}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f);font-size:10px;line-height:1.7}
+body{padding:env(safe-area-inset-top) 0 calc(76px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;
+background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:32px 32px;background-position:-1px -1px;background-blend-mode:soft-light}
+header{padding:16px 14px 12px;background:var(--bg);border-bottom:4px solid var(--pink);position:sticky;top:0;z-index:5}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+h1{font-size:14px;margin:0;color:var(--yellow);text-shadow:2px 2px 0 var(--pink)}
+.lvl{font-size:12px;color:var(--cyan)}
+.bar{height:18px;border:3px solid var(--text);margin:10px 0 4px;background:#0b0820;display:flex;gap:2px;padding:2px}
+.bar i{flex:1;background:#241c52}.bar i.on{background:var(--green)}
+.small{font-size:8px;color:var(--dim)}
+main{padding:14px}
+.card{background:var(--panel);border:3px solid var(--text);box-shadow:4px 4px 0 var(--pink);padding:12px;margin-bottom:16px}
+h2{font-size:11px;margin:0 0 10px;color:var(--cyan)}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center}
+.stats b{display:block;font-size:14px;color:var(--yellow)}
+.ex{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.ex button{font:inherit;color:var(--text);background:#0b0820;border:3px solid var(--line);padding:10px 6px;text-align:left;min-height:56px}
+.ex button.sel{border-color:var(--yellow);color:var(--yellow)}
+.ex span{display:block;font-size:8px;color:var(--dim);margin-top:4px}
+.log{display:flex;gap:8px;margin-top:12px}
+input{font:inherit;font-size:14px;width:100px;background:#0b0820;border:3px solid var(--cyan);color:var(--text);padding:10px;min-width:0}
+.btn{font:inherit;font-size:11px;flex:1;background:var(--pink);color:#fff;border:3px solid var(--text);box-shadow:3px 3px 0 var(--text);padding:12px;text-transform:none}
+.btn:active{transform:translate(3px,3px);box-shadow:none}
+.btn.alt{background:#0b0820;color:var(--dim);box-shadow:none;border-color:var(--line);flex:none;font-size:8px}
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.b{text-align:center;padding:10px 4px;border:3px solid var(--line);background:#0b0820}
+.b .ic{font-size:26px;filter:grayscale(1) brightness(.4)}
+.b p{margin:6px 0 0;font-size:7px;color:var(--dim)}
+.b.got{border-color:var(--yellow)}.b.got .ic{filter:none}.b.got p{color:var(--yellow)}
+.hist div{display:flex;justify-content:space-between;padding:6px 0;border-bottom:2px dashed var(--line);font-size:8px}
+.hist em{font-style:normal;color:var(--green)}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:flex;background:var(--bg);border-top:4px solid var(--pink);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;font:inherit;font-size:9px;background:none;border:0;color:var(--dim);padding:16px 0}
+nav button.on{color:var(--yellow)}
+.tab{display:none}.tab.on{display:block}
+#pop{position:fixed;inset:0;background:rgba(10,6,30,.88);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
+#pop.on{display:flex}
+#pop .card{text-align:center;max-width:320px;animation:pop .4s steps(5)}
+#pop h3{color:var(--yellow);font-size:16px;margin:8px 0}
+@keyframes pop{from{transform:scale(.3)}to{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){#pop .card{animation:none}}
+button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+</style>
+</head>
+<body>
+<header>
+  <div class="row"><h1>LEVEL UP</h1><div class="lvl" id="lvl">LV 1</div></div>
+  <div class="bar" id="bar"></div>
+  <div class="small" id="xptxt"></div>
+</header>
+<main>
+ <section class="tab on" id="t-quest">
+  <div class="card"><h2>Daily quest</h2>
+   <div id="dq" class="small"></div>
+   <div class="bar" id="dbar" style="margin-bottom:0"></div>
+  </div>
+  <div class="card"><h2>Pick a move</h2>
+   <div class="ex" id="ex"></div>
+   <div class="log"><input id="amt" type="number" inputmode="numeric" min="1" placeholder="0"><button class="btn" id="go">Log it</button></div>
+   <div class="small" id="preview" style="margin-top:10px"></div>
+  </div>
+ </section>
+ <section class="tab" id="t-badges">
+  <div class="card"><h2>Badges <span class="small" id="bcount"></span></h2><div class="badges" id="badges"></div></div>
+ </section>
+ <section class="tab" id="t-stats">
+  <div class="card"><h2>Player stats</h2><div class="stats" id="stats"></div></div>
+  <div class="card"><h2>Recent</h2><div class="hist" id="hist"></div></div>
+  <div class="card"><h2>Save file</h2>
+   <div class="log"><button class="btn alt" id="exp">Copy backup</button><button class="btn alt" id="imp">Restore</button><button class="btn alt" id="rst">Reset</button></div>
+  </div>
+ </section>
+</main>
+<nav>
+ <button class="on" data-t="quest">QUEST</button><button data-t="badges">BADGES</button><button data-t="stats">STATS</button>
+</nav>
+<div id="pop"><div class="card"><div id="popic" style="font-size:44px"></div><h3 id="popt"></h3><div class="small" id="popd"></div><br><button class="btn" id="popok">Continue</button></div></div>
+<script>
+const EX=[
+ {id:'push',n:'Push-ups',u:'reps',x:2,i:'💪'},
+ {id:'squat',n:'Squats',u:'reps',x:1.5,i:'🦵'},
+ {id:'sit',n:'Sit-ups',u:'reps',x:1.5,i:'🔥'},
+ {id:'run',n:'Run',u:'min',x:12,i:'👟'},
+ {id:'walk',n:'Walk',u:'min',x:5,i:'🚶'},
+ {id:'lift',n:'Lift',u:'min',x:10,i:'🏋️'},
+ {id:'bike',n:'Cycle',u:'min',x:9,i:'🚴'},
+ {id:'yoga',n:'Yoga',u:'min',x:6,i:'🧘'}];
+const DAILY=100;
+const needFor=l=>100+(l-1)*50;           // XP to go from level l to l+1
+function lvlOf(xp){let l=1;while(xp>=needFor(l)){xp-=needFor(l);l++}return{l,cur:xp,need:needFor(l)}}
+const day=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const KEY='levelup.v1';
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+S=S||{xp:0,logs:[],badges:{},bonus:{}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const dayXP=d=>S.logs.filter(l=>l.d===d).reduce((a,l)=>a+l.xp,0);
+function streak(){let s=0,d=new Date();if(!dayXP(day(d)))d.setDate(d.getDate()-1);
+ while(dayXP(day(d))>0){s++;d.setDate(d.getDate()-1)}return s}
+function best(){const ds=[...new Set(S.logs.map(l=>l.d))].sort();let b=0,c=0,p=null;
+ for(const d of ds){const t=new Date(d+'T00:00');if(p&&(t-p)/864e5===1)c++;else c=1;b=Math.max(b,c);p=t}return b}
+const tot=id=>S.logs.filter(l=>l.e===id).reduce((a,l)=>a+l.n,0);
+const BADGES=[
+ {id:'first',n:'First rep',i:'🎮',t:()=>S.logs.length>=1},
+ {id:'l5',n:'Level 5',i:'⭐',t:()=>lvlOf(S.xp).l>=5},
+ {id:'l10',n:'Level 10',i:'🌟',t:()=>lvlOf(S.xp).l>=10},
+ {id:'l25',n:'Level 25',i:'👑',t:()=>lvlOf(S.xp).l>=25},
+ {id:'s3',n:'3 day streak',i:'🔥',t:()=>best()>=3},
+ {id:'s7',n:'7 day streak',i:'⚡',t:()=>best()>=7},
+ {id:'s30',n:'30 day streak',i:'🚀',t:()=>best()>=30},
+ {id:'p100',n:'100 push-ups',i:'💪',t:()=>tot('push')>=100},
+ {id:'p1k',n:'1000 push-ups',i:'🦾',t:()=>tot('push')>=1000},
+ {id:'sq200',n:'200 squats',i:'🦵',t:()=>tot('squat')>=200},
+ {id:'r60',n:'60 min run',i:'👟',t:()=>tot('run')>=60},
+ {id:'r600',n:'600 min run',i:'🏅',t:()=>tot('run')>=600},
+ {id:'quest',n:'Daily quest',i:'🎯',t:()=>Object.keys(S.bonus).length>=1},
+ {id:'q7',n:'7 quests',i:'🏆',t:()=>Object.keys(S.bonus).length>=7},
+ {id:'all',n:'Try all moves',i:'🧩',t:()=>EX.every(e=>tot(e.id)>0)},
+ {id:'big',n:'500 XP day',i:'💥',t:()=>S.logs.some(l=>dayXP(l.d)>=500)},
+ {id:'k1',n:'1000 XP',i:'💎',t:()=>S.xp>=1000}];
+const $=id=>document.getElementById(id);
+const seg=(el,f,n=12)=>{el.innerHTML='';for(let i=0;i<n;i++){const s=document.createElement('i');if(i<Math.round(f*n))s.className='on';el.appendChild(s)}};
+let sel=EX[0],queue=[];
+function pop(i,t,d){queue.push([i,t,d]);if(!$('pop').classList.contains('on'))next()}
+function next(){const q=queue.shift();if(!q){$('pop').classList.remove('on');return}
+ $('popic').textContent=q[0];$('popt').textContent=q[1];$('popd').textContent=q[2];$('pop').classList.add('on')}
+$('popok').onclick=next;
+function render(){
+ const L=lvlOf(S.xp);$('lvl').textContent='LV '+L.l;seg($('bar'),L.cur/L.need,16);
+ $('xptxt').textContent=Math.floor(L.cur)+' / '+L.need+' XP to next level';
+ const t=dayXP(day());$('dq').textContent='Earn '+DAILY+' XP today for +50 bonus ('+Math.min(t,DAILY)+'/'+DAILY+')';
+ seg($('dbar'),Math.min(t/DAILY,1),10);
+ $('ex').innerHTML=EX.map(e=>`<button data-id="${e.id}" class="${e.id===sel.id?'sel':''}">${e.i} ${e.n}<span>${e.x} XP / ${e.u==='reps'?'rep':'min'}</span></button>`).join('');
+ $('ex').querySelectorAll('button').forEach(b=>b.onclick=()=>{sel=EX.find(e=>e.id===b.dataset.id);render()});
+ $('amt').placeholder=sel.u;prev();
+ $('badges').innerHTML=BADGES.map(b=>`<div class="b ${S.badges[b.id]?'got':''}"><div class="ic">${b.i}</div><p>${b.n}</p></div>`).join('');
+ $('bcount').textContent=Object.keys(S.badges).length+'/'+BADGES.length;
+ $('stats').innerHTML=[['Total XP',Math.floor(S.xp)],['Streak',streak()],['Best',best()],['Workouts',S.logs.length],['Days',new Set(S.logs.map(l=>l.d)).size],['Quests',Object.keys(S.bonus).length]].map(s=>`<div><b>${s[1]}</b><span class="small">${s[0]}</span></div>`).join('');
+ $('hist').innerHTML=S.logs.slice(-10).reverse().map(l=>{const e=EX.find(x=>x.id===l.e);return`<div><span>${l.d.slice(5)} ${e.i} ${l.n} ${e.u}</span><em>+${l.xp}</em></div>`}).join('')||'<div class="small">No workouts yet. Log your first move.</div>';
+}
+function prev(){const n=+$('amt').value;$('preview').textContent=n>0?'Reward: +'+Math.round(n*sel.x)+' XP':''}
+$('amt').oninput=prev;
+$('go').onclick=()=>{
+ const n=Math.floor(+$('amt').value);if(!(n>0)){$('amt').focus();return}
+ const before=lvlOf(S.xp).l,xp=Math.round(n*sel.x),d=day();
+ S.logs.push({d,e:sel.id,n,xp});S.xp+=xp;
+ if(dayXP(d)>=DAILY&&!S.bonus[d]){S.bonus[d]=1;S.xp+=50;pop('🎯','Quest clear!','+50 bonus XP')}
+ const after=lvlOf(S.xp).l;
+ if(after>before)pop('⬆️','Level '+after,'You levelled up!');
+ BADGES.forEach(b=>{if(!S.badges[b.id]&&b.t()){S.badges[b.id]=d;pop(b.i,'Badge unlocked',b.n)}});
+ $('amt').value='';save();render();
+ if(navigator.vibrate)navigator.vibrate(40);
+};
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='t-'+b.dataset.t));scrollTo(0,0)});
+$('exp').onclick=async()=>{const s=JSON.stringify(S);try{await navigator.clipboard.writeText(s);pop('💾','Copied','Paste it somewhere safe')}catch(e){prompt('Copy your backup:',s)}};
+$('imp').onclick=()=>{const s=prompt('Paste your backup:');if(!s)return;try{const o=JSON.parse(s);if(typeof o.xp!=='number'||!Array.isArray(o.logs))throw 0;S=o;save();render()}catch(e){alert('That backup is not valid.')}};
+$('rst').onclick=()=>{if(confirm('Erase all progress?')){S={xp:0,logs:[],badges:{},bonus:{}};save();render()}};
+render();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
